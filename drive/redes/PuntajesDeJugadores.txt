@@ -1,0 +1,6 @@
+Jugador: Alejandro    Puntaje:300
+Jugador: Aline    Puntaje:12
+Jugador: Angel    Puntaje:64
+Jugador: Juan    Puntaje:500
+Jugador: Rene    Puntaje:500
+Jugador: Isabela    Puntaje:500
