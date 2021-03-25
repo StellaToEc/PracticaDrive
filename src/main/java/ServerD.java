@@ -67,49 +67,6 @@ public class ServerD {
             e.printStackTrace();
         }
     }
-    public void descargarC() throws IOException, ClassNotFoundException{
-       String elecdow = (String) ois.readObject();
-       File fileToDowload = new File(dirActual+"\\"+elecdow);
-        if(fileToDowload.exists()){
-            System.out.println("Descargando "+fileToDowload.getAbsolutePath());
-            oos.writeObject("Descargando" +fileToDowload.getAbsolutePath());
-            oos.flush();
-            if (!fileToDowload.isDirectory()) {  //descargar archivo
-                    descarga(fileToDowload);
-            } else {        //eliminar directorio
-                String nomzip = fileToDowload.getAbsolutePath()+".zip";
-                System.out.println("nombre:" +nomzip);
-                ZipUtil.pack(fileToDowload, new File(nomzip));
-                descarga(new File(nomzip));
-                new File(nomzip).delete();
-            }
-        }else {
-            oos.writeObject("El archivo o dir no existe");
-            oos.flush();
-        }
-    }
-
-    public void descarga(File f) throws IOException {
-        long tam = f.length();
-        System.out.println("Enviando '"+f.getName()+"' de "+tam/1024+" kb");
-
-        oos.writeObject(f);
-        oos.flush();
-
-        DataInputStream disf = new DataInputStream(new FileInputStream(f.getAbsolutePath()));
-
-        long enviados = 0;
-        int l;
-        while (enviados<tam){
-            byte[] b = new byte[1500];
-            l=disf.read(b);
-            oos.write(b, 0, l);
-            oos.flush();
-            enviados += l;
-        }
-        disf.close();
-        System.out.println("Archivo enviado");
-    }
 
     public void mostrarArchivos() throws IOException {
         File f = new File(dirActual);
@@ -133,7 +90,6 @@ public class ServerD {
             subirArchivo(f);
         }
     }
-
     public void subirArchivo(File f) throws IOException {
         long tam = f.length();
 
@@ -169,7 +125,48 @@ public class ServerD {
         new File(destino).delete();
     }
 
+    public void descargarC() throws IOException, ClassNotFoundException{
+        String elecdow = (String) ois.readObject();
+        File fileToDowload = new File(dirActual+"\\"+elecdow);
+        if(fileToDowload.exists()){
+            System.out.println("Descargando "+fileToDowload.getAbsolutePath());
+            oos.writeObject("Descargando" +fileToDowload.getPath());
+            oos.flush();
+            if (!fileToDowload.isDirectory()) {  //descargar archivo
+                descarga(fileToDowload);
+            } else {        //eliminar directorio
+                String nomzip = fileToDowload.getAbsolutePath()+".zip";
+                System.out.println("nombre:" +nomzip);
+                ZipUtil.pack(fileToDowload, new File(nomzip));
+                descarga(new File(nomzip));
+                new File(nomzip).delete();
+            }
+        }else {
+            oos.writeObject("El archivo o dir no existe");
+            oos.flush();
+        }
+    }
+    public void descarga(File f) throws IOException {
+        long tam = f.length();
+        System.out.println("Enviando '"+f.getName()+"' de "+tam/1024+" kb");
 
+        oos.writeObject(f);
+        oos.flush();
+
+        DataInputStream disf = new DataInputStream(new FileInputStream(f.getAbsolutePath()));
+
+        long enviados = 0;
+        int l;
+        while (enviados<tam){
+            byte[] b = new byte[1500];
+            l=disf.read(b);
+            oos.write(b, 0, l);
+            oos.flush();
+            enviados += l;
+        }
+        disf.close();
+        System.out.println("Archivo enviado");
+    }
 
     public void eliminar() throws IOException, ClassNotFoundException {     //trabajo en este
         String elec = (String) ois.readObject();
@@ -232,5 +229,5 @@ public class ServerD {
 
     public static void main(String[] args){
         new ServerD();
-    }//main
+    }
 }
