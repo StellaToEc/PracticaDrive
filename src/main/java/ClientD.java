@@ -8,7 +8,6 @@ import java.util.Scanner;
 import org.apache.commons.io.FilenameUtils;
 import org.zeroturnaround.zip.ZipUtil;
 
-
 public class ClientD {
     private String dirActual = "drive";
     private ObjectOutputStream oos;
@@ -39,8 +38,8 @@ public class ClientD {
                         mostrarArchivos();
                     }
                     case 2 -> {   //descargar un archivo o carpeta
-                        descargarC();
-                        descarga();
+                        if(descargarC())
+                            descarga();
                         mostrarArchivos();
                     }
                     case 3 -> {   //eliminar archivo o carpeta
@@ -106,7 +105,36 @@ public class ClientD {
             e.printStackTrace();
         }//catch
     }
+    public void subirArchivo(File f) throws IOException {
+        long tam = f.length();
+        System.out.println("Enviando '"+f.getName()+"' de "+tam/1024+" kb");
+        oos.writeObject(f);
+        oos.flush();
 
+        DataInputStream disf = new DataInputStream(new FileInputStream(f.getAbsolutePath()));
+        long enviados = 0;
+        int l;
+        while (enviados<tam){
+            byte[] b = new byte[1500];
+            l=disf.read(b);
+            oos.write(b, 0, l);
+            oos.flush();
+            enviados += l;
+        }
+        disf.close();
+        System.out.println("Archivo enviado");
+    }
+
+    public boolean descargarC() throws IOException, ClassNotFoundException{
+        Scanner reader = new Scanner(System.in);
+        System.out.println("Archivo o dir a descargarr: ");
+        String elecdow = reader.nextLine();
+        oos.writeObject(elecdow);
+        oos.flush();
+        String respuesta = (String) ois.readObject();
+        System.out.println(respuesta);
+        return !respuesta.equals("El archivo o dir no existe");
+    }
     public void descarga() throws IOException, ClassNotFoundException {
         File f = (File)ois.readObject();
         String fileName = f.toString();
@@ -117,21 +145,19 @@ public class ClientD {
         else
             bajarArchivo(f);
     }
-
     public void bajarDir(File f) throws IOException{
 
         System.out.println("carpeta a descargar:"+f.getName());
 
         bajarArchivo(f);
 
-        String destino = Paths.get(ruta.toString(), f.getName()).toString();
-        Path descom = Paths.get(ruta.toString(), FilenameUtils.removeExtension(f.getName()) );
+        String destino = Paths.get(ruta, f.getName()).toString();
+        Path descom = Paths.get(ruta, FilenameUtils.removeExtension(f.getName()) );
         System.out.println("Descomprimiendo " + destino + " en " + descom.toString());
 
         new net.lingala.zip4j.ZipFile(destino).extractAll(descom.toString());
         new File(destino).delete();
     }
-
     public void bajarArchivo(File f) {
         long tam = f.length();
 
@@ -166,34 +192,6 @@ public class ClientD {
             e.printStackTrace();
         }
     }
-    public void subirArchivo(File f) throws IOException {
-        long tam = f.length();
-        System.out.println("Enviando '"+f.getName()+"' de "+tam/1024+" kb");
-        oos.writeObject(f);
-        oos.flush();
-
-        DataInputStream disf = new DataInputStream(new FileInputStream(f.getAbsolutePath()));
-        long enviados = 0;
-        int l;
-        while (enviados<tam){
-            byte[] b = new byte[1500];
-            l=disf.read(b);
-            oos.write(b, 0, l);
-            oos.flush();
-            enviados += l;
-        }
-        disf.close();
-        System.out.println("Archivo enviado");
-    }
-
-    public void descargarC() throws IOException, ClassNotFoundException{
-        Scanner reader = new Scanner(System.in);
-        System.out.println("Archivo o dir a descargarr: ");
-        String elecdow = reader.nextLine();
-        oos.writeObject(elecdow);
-        oos.flush();
-        System.out.println( (String) ois.readObject() );
-    }
 
     public void eliminar() throws IOException, ClassNotFoundException {     //trabajo en este
         Scanner reader = new Scanner(System.in);
@@ -224,7 +222,5 @@ public class ClientD {
         mostrarArchivos();
     }
 
-    public static void main(String[] args){
-        new ClientD();
-    }//main
+    public static void main(String[] args){ new ClientD(); }
 }
