@@ -1,14 +1,10 @@
 import org.apache.commons.io.FilenameUtils;
 import org.zeroturnaround.zip.ZipUtil;
-
-import javax.swing.*;
 import java.io.*;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.Locale;
-
 
 public class ServerD {
     private String dirActual;
@@ -77,18 +73,20 @@ public class ServerD {
         if(fileToDowload.exists()){
             System.out.println("Descargando "+fileToDowload.getAbsolutePath());
             oos.writeObject("Descargando" +fileToDowload.getAbsolutePath());
+            oos.flush();
             if (!fileToDowload.isDirectory()) {  //descargar archivo
                     descarga(fileToDowload);
-                oos.writeObject("Termino descarga");
             } else {        //eliminar directorio
                 String nomzip = fileToDowload.getAbsolutePath()+".zip";
                 System.out.println("nombre:" +nomzip);
                 ZipUtil.pack(fileToDowload, new File(nomzip));
                 descarga(new File(nomzip));
                 new File(nomzip).delete();
-                oos.writeObject("Termino descarga");
             }
-        }else oos.writeObject("El archivo o dir no existe");
+        }else {
+            oos.writeObject("El archivo o dir no existe");
+            oos.flush();
+        }
     }
 
     public void descarga(File f) throws IOException {
@@ -179,18 +177,29 @@ public class ServerD {
         if(fileToDelete.exists()){
             System.out.println("eliminando "+fileToDelete.getAbsolutePath());
             if (!fileToDelete.isDirectory()) {  //eliminar archivo
-                if(fileToDelete.delete())
+                if(fileToDelete.delete()) {
                     oos.writeObject("Archivo eliminado");
-                else
+                    oos.flush();
+                }
+                else {
                     oos.writeObject("Error al eliminar archivo");
+                    oos.flush();
+                }
             }
             else {        //eliminar directorio
-                if(deleteDirectory(fileToDelete))
+                if(deleteDirectory(fileToDelete)) {
                     oos.writeObject("Dir eliminado");
-                else
+                    oos.flush();
+                }
+                else {
                     oos.writeObject("Error al eliminar dir");
+                    oos.flush();
+                }
             }
-        }else oos.writeObject("El archivo o dir no existe");
+        }else {
+            oos.writeObject("El archivo o dir no existe");
+            oos.flush();
+        }
     }
     boolean deleteDirectory(File directoryToBeDeleted) {
         File[] allContents = directoryToBeDeleted.listFiles();
@@ -211,6 +220,7 @@ public class ServerD {
             System.out.println("Dir invalido");
         }
         oos.writeObject(existeDir);
+        oos.flush();
         System.out.println("Entrar a '"+elec+"'");
         if(elec.equals("..")){
             dirActual = raiz;
