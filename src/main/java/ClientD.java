@@ -112,14 +112,10 @@ public class ClientD {
         String fileName = f.toString();
         String aux = FilenameUtils.getExtension(fileName);
 
-        if(aux.equals("zip")) {
-            System.out.println("\nEl cliente quiere descargar una carpeta");
+        if(aux.equals("zip"))
             bajarDir(f);
-        }
-        else {
-            System.out.println("\nEl cliente quiere descargar un archivo");
+        else
             bajarArchivo(f);
-        }
     }
 
     public void bajarDir(File f) throws IOException{
