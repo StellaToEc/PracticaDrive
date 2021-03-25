@@ -49,8 +49,8 @@ public class ServerD {
                             mostrarArchivos();
                         }
                         case 2 -> {
-                            System.out.println("El cliente quiere descargar");
                             descargarC();
+                            mostrarArchivos();
                         }
                         case 3 -> {
                             eliminar();
@@ -73,16 +73,19 @@ public class ServerD {
     }
     public void descargarC() throws IOException, ClassNotFoundException{
        String elecdow = (String) ois.readObject();
-        File fileToDowload = new File(dirActual+"\\"+elecdow);
+       File fileToDowload = new File(dirActual+"\\"+elecdow);
         if(fileToDowload.exists()){
             System.out.println("Descargando "+fileToDowload.getAbsolutePath());
+            oos.writeObject("Descargando" +fileToDowload.getAbsolutePath());
             if (!fileToDowload.isDirectory()) {  //descargar archivo
                     descarga(fileToDowload);
                 oos.writeObject("Termino descarga");
             } else {        //eliminar directorio
                 String nomzip = fileToDowload.getAbsolutePath()+".zip";
+                System.out.println("nombre:" +nomzip);
                 ZipUtil.pack(fileToDowload, new File(nomzip));
                 descarga(new File(nomzip));
+                new File(nomzip).delete();
                 oos.writeObject("Termino descarga");
             }
         }else oos.writeObject("El archivo o dir no existe");
@@ -114,6 +117,7 @@ public class ServerD {
         File f = new File(dirActual);
         File []listaDeArchivos = f.listFiles();
         oos.writeObject(listaDeArchivos);
+        oos.flush();
     }
 
     public void subir() throws IOException, ClassNotFoundException {

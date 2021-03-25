@@ -4,7 +4,6 @@ import java.net.Socket;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.text.SimpleDateFormat;
-import java.util.Locale;
 import java.util.Scanner;
 import org.apache.commons.io.FilenameUtils;
 import org.zeroturnaround.zip.ZipUtil;
@@ -15,6 +14,7 @@ public class ClientD {
     private String dirActual = "drive";
     private ObjectOutputStream oos;
     private ObjectInputStream ois;
+    private String ruta;
 
     public ClientD(){
         try{
@@ -32,6 +32,7 @@ public class ClientD {
                 System.out.println("\n\t\t\t\tMenu\n1-Subir un archivo o carpeta\n2-Descargar\n3-Eliminar un archivo o carpeta\n4-Cambiar directorio\n0-Salir\n\n>");
                 elec= reader.nextInt();
                 oos.writeObject(elec);
+                oos.flush();
                 switch (elec) {
                     case 1 -> {   //subir archivo o carpeta
                         System.out.println("Lanzando JFileChooser...");
@@ -98,6 +99,7 @@ public class ClientD {
                     String nomzip = f.getAbsolutePath()+".zip";
                     ZipUtil.pack(f, new File(nomzip));
                     subirArchivo(new File(nomzip));
+                    new File(nomzip).delete();
                 }
                 else subirArchivo(f);
             }
@@ -112,49 +114,62 @@ public class ClientD {
         String aux = FilenameUtils.getExtension(fileName);
 
         if(aux.equals("zip")) {
-            System.out.println("\nEl cliente quiere subir carpeta");
+            System.out.println("\nEl cliente quiere descargar una carpeta");
             bajarDir(f);
         }
         else {
-            System.out.println("\nEl cliente quiere subir un archivo");
+            System.out.println("\nEl cliente quiere descargar un archivo");
             bajarArchivo(f);
         }
     }
 
     public void bajarDir(File f) throws IOException{
-        Locale aux= Locale.ROOT;
-        System.out.println("carpeta a subir:"+f.getName());
-        String destino = Paths.get(aux.toString(), f.getName()).toString();
+
+        System.out.println("carpeta a descargar:"+f.getName());
 
         bajarArchivo(f);
 
-        Path descom = Paths.get(aux.toString(), FilenameUtils.removeExtension(f.getName()) );
-
+        String destino = Paths.get(ruta.toString(), f.getName()).toString();
+        Path descom = Paths.get(ruta.toString(), FilenameUtils.removeExtension(f.getName()) );
         System.out.println("Descomprimiendo " + destino + " en " + descom.toString());
 
         new net.lingala.zip4j.ZipFile(destino).extractAll(descom.toString());
         new File(destino).delete();
     }
 
-    public void bajarArchivo(File f) throws IOException {
+    public void bajarArchivo(File f) {
         long tam = f.length();
 
         System.out.println("Comienza descarga del archivo '"+f.getName()+"' de "+tam/1024+" kb");
-        System.out.println("Descargando en "+ Locale.ROOT);
-        DataOutputStream dosf = new DataOutputStream(new FileOutputStream(Locale.ROOT+f.getName()));
 
-        long recibidos=0;
-        int l;
-        while(recibidos<tam){
-            byte[] b = new byte[1500];
-            l = ois.read(b,0,b.length);
-            dosf.write(b,0,l);
-            dosf.flush();
-            recibidos += l;
+        try {
+            JFileChooser jf = new JFileChooser();
+            jf.setFileSelectionMode(JFileChooser.DIRECTORIES_ONLY);
+            int r = jf.showOpenDialog(null);
+            if(r==JFileChooser.APPROVE_OPTION) {
+                File aux = jf.getSelectedFile();
+                ruta = aux.getAbsolutePath();
+
+                System.out.println("Descargando en: " +ruta);
+
+                DataOutputStream dosf = new DataOutputStream(new FileOutputStream(Paths.get(ruta,f.getName()).toString()));
+
+                long recibidos = 0;
+                int l;
+                while (recibidos < tam) {
+                    byte[] b = new byte[1500];
+                    l = ois.read(b, 0, b.length);
+                    dosf.write(b, 0, l);
+                    dosf.flush();
+                    recibidos += l;
+                }
+
+                System.out.println("Archivo recibido");
+                dosf.close();
+            }
+        }catch(Exception e) {
+            e.printStackTrace();
         }
-
-        System.out.println("Archivo recibido");
-        dosf.close();
     }
     public void subirArchivo(File f) throws IOException {
         long tam = f.length();
